@@ -106,26 +106,26 @@ fig, axs = plt.subplots(2, 2, figsize=(10, 7), sharex=True)
 labels = ["10% SiO", "50% SiO", "90% SiO"]
 
 ax = axs[0, 0]
-ax.set_title(r"$\mathregular{O_2}$ plasma viscosity")
+ax.set_title(r"$\mathregular{SiO-CO}$ plasma viscosity")
 ax.set_ylabel("$\\mathregular{\\mu [Pa.s]}$")
 for visc, label in zip(viscosity, labels):
     ax.plot(temperatures, visc, label=label)
 
 ax = axs[0, 1]
-ax.set_title(r"$\mathregular{O_2}$ plasma thermal conductivity")
+ax.set_title(r"$\mathregular{SiO-CO}$ plasma thermal conductivity")
 ax.set_ylabel("$\\mathregular{\\kappa [W/(m.K)]}$")
 for thermal_cond, label in zip(thermal_conductivity, labels):
     ax.plot(temperatures, thermal_cond, label=label)
 
 ax = axs[1, 0]
-ax.set_title(r"$\mathregular{O_2}$ plasma electrical conductivity")
+ax.set_title(r"$\mathregular{SiO-CO}$ plasma electrical conductivity")
 ax.set_xlabel("T [K]")
 ax.set_ylabel("$\\mathregular{\\sigma [S/m]}$")
 for elec_cond, label in zip(electrical_conductivity, labels):
     ax.plot(temperatures, elec_cond, label=label)
 
 ax = axs[1, 1]
-ax.set_title(r"$\mathregular{O_2}$ plasma emission coefficient")
+ax.set_title(r"$\mathregular{SiO-CO}$ plasma emission coefficient")
 ax.set_xlabel("T [K]")
 ax.set_ylabel("$\\mathregular{\\epsilon_{tot} [W/(m^3.sr)]}$")
 for emiss, label in zip(total_emission_coefficient, labels):
