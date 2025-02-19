@@ -149,8 +149,8 @@ jobs:
   deploy:
     needs: docs-build
 
-    # # Deploy only when the main branch is pushed.
-    # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Deploy only when the main branch is pushed.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment.
     permissions:
