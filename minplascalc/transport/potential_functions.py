@@ -332,7 +332,7 @@ def psiconst(s: int) -> float:
 
 
 def A(ionisation_energy: float) -> float:
-    """...TODO...
+    r"""Constant A for the fit function of the total resonant transfert cross section.
 
     Parameters
     ----------
@@ -342,22 +342,56 @@ def A(ionisation_energy: float) -> float:
     Returns
     -------
     float
-        ...
+        Constant A.
 
     Notes
     -----
-    ...
+    :math:`A` and :math:`B` are given by a simple empirical fit as a function of the ionisation energy to
+    analytical expressions from [Rapp1962]_ and [Smirnov1970]_.
 
-    References
-    ----------
-    ...
+    The fit function is given by eq. 11 of [Devoto1967]_:
+
+    .. math::
+
+        Q_{ T }^{T O T}=(1 / 2)[A-B \ln (g)]^2
+
+    From equation 14 of [Rapp1962]_, we have:
+
+    .. math::
+
+        \begin{aligned}
+            \sigma^{\frac{1}{2}}
+                =\left(\frac{1}{2} \pi\right)^{\frac{1}{2}} b_1
+                =-\left(\frac{1}{2} \pi\right)^{\frac{1}{2}} & \left(a_0 / \gamma\right) \ln v
+                 +\left(\frac{1}{2} \pi\right)^{\frac{1}{2}}\left(a_0 / 2 \gamma\right) \\
+                 & \times \ln \left[\frac{72 \bar{b}_1^3}{\pi \gamma a_0}\left(\frac{I^2}{\hbar^2}\right)
+                    \left(1+\frac{a_0}{\gamma \bar{b}_1}\right)^2\right]
+        \end{aligned}
+
+    where:
+
+    - :math:`\gamma = \sqrt{\frac{I[eV]}{13.6}}` (cf. equation 10 of [Rapp1962]_),
+    - :math:`a_0` is the Bohr radius,
+    - :math:`I` is the ionisation energy in eV,
+    - :math:`\hbar` is the reduced Planck constant, and
+    - :math:`\bar{b}_1` can be found using equation 13 of [Rapp1962]_.
+
+    Therefore, :math:`A` is given by:
+
+    .. math::
+
+        A = \sqrt{\pi} \frac{a_0}{2 \gamma}
+            \ln \left[\frac{72 \bar{b}_1^3}{\pi \gamma a_0}\left(\frac{I^2}{\hbar^2}\right)
+            \left(1+\frac{a_0}{\gamma \bar{b}_1}\right)^2\right]
+
+    TODO: Check the formula for A.
     """
     ie_eV = ionisation_energy * u.J_to_eV  # Convert ionisation energy to eV.
     return np.sqrt(u.pi) * 9.81867945e-09 / ie_eV**0.729218856
 
 
 def B(ionisation_energy: float) -> float:
-    """...TODO...
+    r"""Constant B for the fit function of the total resonant transfert cross section.
 
     Parameters
     ----------
@@ -367,15 +401,55 @@ def B(ionisation_energy: float) -> float:
     Returns
     -------
     float
-        ...
+        Constant B.
 
     Notes
     -----
-    ...
+    :math:`A` and :math:`B` are given by a simple empirical fit as a function of the ionisation energy to
+    analytical expressions from [Rapp1962]_ and [Smirnov1970]_.
 
-    References
-    ----------
-    ...
+    The fit function is given by eq. 11 of [Devoto1967]_:
+
+    .. math::
+
+        Q_{ T }^{T O T}=(1 / 2)[A-B \ln (g)]^2
+
+    From equation 14 of [Rapp1962]_, we have:
+
+    .. math::
+
+        \begin{aligned}
+            \sigma^{\frac{1}{2}}
+                =\left(\frac{1}{2} \pi\right)^{\frac{1}{2}} b_1
+                =-\left(\frac{1}{2} \pi\right)^{\frac{1}{2}} & \left(a_0 / \gamma\right) \ln v
+                 +\left(\frac{1}{2} \pi\right)^{\frac{1}{2}}\left(a_0 / 2 \gamma\right) \\
+                 & \times \ln \left[\frac{72 \bar{b}_1^3}{\pi \gamma a_0}\left(\frac{I^2}{\hbar^2}\right)
+                    \left(1+\frac{a_0}{\gamma \bar{b}_1}\right)^2\right]
+        \end{aligned}
+
+    where:
+
+    - :math:`\gamma = \sqrt{\frac{I[eV]}{13.6}}` (cf. equation 10 of [Rapp1962]_),
+    - :math:`a_0` is the Bohr radius,
+    - :math:`I` is the ionisation energy in eV,
+    - :math:`\hbar` is the reduced Planck constant, and
+    - :math:`\bar{b}_1` can be found using equation 13 of [Rapp1962]_.
+
+    Therefore, :math:`B` is given by:
+
+    .. math::
+
+        B = \pi^{\frac{1}{2}} \frac{a_0}{\gamma}
+
+
+    TODO: Check the following:
+
+    .. math::
+
+        B = \sqrt{\pi} \frac{a_0 \sqrt{13.6} }{\sqrt{I[eV]}}
+          = \sqrt{\pi} \times \frac{1,95.10^{-10}}{ \sqrt{I[eV]}}
+
+    However, the function returns :math:`\sqrt{\pi} \times \frac{4.78.10^{-10}}{ I[eV]^{0.657}}`.
     """
     ie_eV = ionisation_energy * u.J_to_eV  # Convert ionisation energy to eV.
     return np.sqrt(u.pi) * 4.78257679e-10 / ie_eV**0.657012657

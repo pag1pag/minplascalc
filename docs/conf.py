@@ -57,7 +57,7 @@ autoapi_dirs = ["../minplascalc"]
 autoapi_ignore = ["*/version.py"]
 autoapi_options = [  # https://sphinx-autoapi.readthedocs.io/en/latest/reference/config.html#confval-autoapi_options
     "members",
-    # "inherited-members",
+    "inherited-members",
     "undoc-members",
     "show-inheritance",
     "show-module-summary",
@@ -141,4 +141,4 @@ html_css_files = [
     "custom.css",
 ]
 
-html_logo = "minplascalc_logo_small.png"
+html_logo = "minplascalc_logo.png"
