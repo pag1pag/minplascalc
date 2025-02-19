@@ -1,0 +1,24 @@
+{
+    "name": "H+",
+    "stoichiometry": {
+        "H": 1
+    },
+    "molarmass": 0.00100739,
+    "chargenumber": 1,
+    "polarisability": 1e-99,
+    "multiplicity": 1,
+    "effectiveelectrons": null,
+    "electroncrosssection": null,
+    "emissionlines": [],
+    "ionisationenergy": 1e99,
+    "energylevels": [
+        [
+            0.0,
+            0.0
+        ]
+    ],
+    "sources": [
+        "Based on https://ntrs.nasa.gov/api/citations/20020085330/downloads/20020085330.pdf, heat capacity at constant pressure of H+ should be 5/2 k_b T, since its a unique proton.",
+        "H+ is a proton, so no polarisability, nor emissionlines, nor energylevels."
+    ]
+}

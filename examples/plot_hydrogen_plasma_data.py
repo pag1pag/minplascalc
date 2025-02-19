@@ -39,7 +39,7 @@ from minplascalc.utils import get_path_to_data
 # in minplascalc which creates the object directly from a list of the species names.
 
 hydrogen_mixture = mpc.mixture.lte_from_names(
-    ["H2", "H2+", "H", "H+"], [1, 0, 0, 0, 0, 0], 1000, 101325
+    ["H2", "H2+", "H", "H+"], [1, 0, 0, 0], 1000, 101325
 )
 # %%
 # Set a range of temperatures to calculate the equilibrium compositions at.
@@ -101,10 +101,10 @@ electrical_conductivity_ref = data[:, 6]
 #
 # Now we can visualise the properties by plotting them against temperature, to see how they vary.
 
-fig, axs = plt.subplots(2, 3, figsize=(10, 4))
+fig, axs = plt.subplots(2, 3, figsize=(12, 8))
 
 ax = axs[0, 0]
-ax.set_title(r"$\mathregular{O_2}$ plasma density at 1 atm")
+ax.set_title(r"$\mathregular{H_2}$ plasma density at 1 atm")
 ax.set_xlabel("T [K]")
 ax.set_ylabel("$\\mathregular{\\rho [kg/m^3]}$")
 ax.semilogy(temperatures, density, "k", label="minplascalc")
@@ -112,7 +112,7 @@ ax.semilogy(temperatures_ref, density_ref, "k--", label="Boulos et al. (2023)")
 ax.legend()
 
 ax = axs[0, 1]
-ax.set_title(r"$\mathregular{O_2}$ plasma heat capacity at 1 atm")
+ax.set_title(r"$\mathregular{H_2}$ plasma heat capacity at 1 atm")
 ax.set_xlabel("T [K]")
 ax.set_ylabel(r"$\mathregular{C_P [J/(kg.K)]}$")
 ax.plot(temperatures, cp, "k", label="minplascalc")
@@ -120,7 +120,7 @@ ax.plot(temperatures_ref, cp_ref, "k--", label="Boulos et al. (2023)")
 ax.legend()
 
 ax = axs[0, 2]
-ax.set_title(r"$\mathregular{O_2}$ plasma enthalpy at 1 atm")
+ax.set_title(r"$\mathregular{H_2}$ plasma enthalpy at 1 atm")
 ax.set_xlabel("T [K]")
 ax.set_ylabel(r"$\mathregular{H [J/kg]}$")
 ax.plot(temperatures, h, "k", label="minplascalc")
@@ -128,21 +128,23 @@ ax.plot(temperatures_ref, enthalpy_ref, "k--", label="Boulos et al. (2023)")
 ax.legend()
 
 ax = axs[1, 0]
-ax.set_title(r"$\mathregular{O_2}$ plasma viscosity")
+ax.set_title(r"$\mathregular{H_2}$ plasma viscosity")
+ax.set_xlabel("T [K]")
 ax.set_ylabel("$\\mathregular{\\mu [Pa.s]}$")
 ax.plot(temperatures, viscosity, "k", label="minplascalc")
 ax.plot(temperatures_ref, viscosity_ref, "k--", label="Boulos et al. (2023)")
 ax.legend()
 
 ax = axs[1, 1]
-ax.set_title(r"$\mathregular{O_2}$ plasma thermal conductivity")
+ax.set_title(r"$\mathregular{H_2}$ plasma thermal conductivity")
+ax.set_xlabel("T [K]")
 ax.set_ylabel("$\\mathregular{\\kappa [W/(m.K)]}$")
 ax.plot(temperatures, thermal_conductivity, "k", label="minplascalc")
 ax.plot(temperatures_ref, thermal_conductivity_ref, "k--", label="Boulos et al. (2023)")
 ax.legend()
 
 ax = axs[1, 2]
-ax.set_title(r"$\mathregular{O_2}$ plasma electrical conductivity")
+ax.set_title(r"$\mathregular{H_2}$ plasma electrical conductivity")
 ax.set_xlabel("T [K]")
 ax.set_ylabel("$\\mathregular{\\sigma [S/m]}$")
 ax.plot(temperatures, electrical_conductivity, "k", label="minplascalc")
@@ -161,6 +163,6 @@ plt.tight_layout()
 # The results obtained using minplascalc are comparable to other data for hydrogen plasmas in literature,
 # for example [Boulos2023]_. In particular the position and size of the peaks in :math:`C_p`,
 # which are caused by the highly nonlinear dissociation and first ionisation reactions
-# of :math:`O_2` and :math:`O` respectively, are accurately captured.
+# of :math:`H_2` and :math:`O` respectively, are accurately captured.
 
 # %%
