@@ -141,4 +141,4 @@ html_css_files = [
     "custom.css",
 ]
 
-html_logo = "minplascalc_logo_small.png"
+html_logo = "minplascalc_logo.png"

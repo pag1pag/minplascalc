@@ -1,6 +1,6 @@
 # Welcome to Minplascalc's documentation!
 
-![image](minplascalc_logo_small.png)
+![image](minplascalc_logo.png)
 
 ```{toctree}
 :caption: 'Contents:'
