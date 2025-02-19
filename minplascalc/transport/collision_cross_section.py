@@ -326,7 +326,8 @@ def Qtr(
 
     where:
 
-    - :math:`A` and :math:`B` are given by ...TODO...,
+    - :math:`A` and :math:`B` are given by a simple empirical fit as a function of the ionisation energy to
+      analytical expressions from [Rapp1962]_ and [Smirnov1970]_.
     - :math:`x=\ln (4 R)`, with :math:`R` the gas constant,
     - :math:`\zeta=\sum_{n=1}^{s+1} \frac{1}{n} - \gamma`,
     - :math:`\gamma` is Euler's constant,
@@ -383,16 +384,23 @@ def Qc(
 
     Notes
     -----
-    The Coulomb collision integral is given by (TODO: add reference):
+    The Coulomb collision integrals are given by equation 5 of [Devoto1967]_:
 
     .. math::
 
-        \theta_c=\frac{C_1 \pi}{s(s+1)}\left(\frac{z_i z_j e^2}{2 k_B T}\right)^2
-            \left[\ln \Lambda-C_2-2 \bar{\gamma}+\sum_{n=1}^{s-1} \frac{1}{n}\right]
+        \begin{aligned}
+        \bar{Q}^{(1,s)}=\frac{4\pi}{s(s+1)} b_0^2\left[\ln \Lambda-\frac{1}{2}-2\bar{\gamma}+\psi(s)\right]\\
+        \bar{Q}^{(2,s)}=\frac{12\pi}{s(s+1)} b_0^2\left[\ln \Lambda-1-2 \bar{\gamma}+\psi(s)\right]\\
+        \bar{Q}^{(3,s)}=\frac{12\pi}{s(s+1)} b_0^2\left[\ln \Lambda-\frac{7}{6}-2\bar{\gamma}+\psi(s)\right]\\
+        \bar{Q}^{(4,s)}=\frac{16\pi}{s(s+1)} b_0^2\left[\ln \Lambda-\frac{4}{3}-2\bar{\gamma}+\psi(s)\right]
+        \end{aligned}
 
-    References
-    ----------
-    TODO: Add references.
+    where:
+
+    - :math:`b_0=\frac{Z_i Z_j e^2}{2k_B T}`,
+    - :math:`\ln \Lambda` is the Coulomb logarithm,
+    - :math:`\bar{\gamma=0.5772...}` is Euler's constant,
+    - :math:`\psi(s) = \sum_{n=1}^{s+1} \frac{1}{n}`.
     """
     C1 = [4, 12, 12, 16]
     C2 = [1 / 2, 1, 7 / 6, 4 / 3]

@@ -28,6 +28,16 @@ Articles
   like phenomenological model potential, *Chemical Physical Letters*, 445,
   2007, 133-139
 
+.. [Rapp1962] Donald Rapp, W. E. Francis; Charge Exchange between Gaseous Ions and Atoms. 
+  J. Chem. Phys. 1 December 1962; 37 (11): 2631-2645. https://doi.org/10.1063/1.1733066
+
+.. [Smirnov1970] B.M. Smirnov; The Classical Theory of Resonance Charge Exchange.
+  JETP, Vol. 32, No. 4, p. 670 (April 1971)
+  (Russian original - ZhETF, Vol. 59, No. 4, p. 1225, April 1971)
+  Available at: http://www.jetp.ras.ru/cgi-bin/dn/e_032_04_0670.pdf - accessed 2025-02-19
+
+
+
 Books
 -----
 
