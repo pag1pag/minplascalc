@@ -46,10 +46,10 @@ hydrogen_mixture = mpc.mixture.lte_from_names(
 # -------------------------------------------------------------------------
 #
 # Next, set a range of temperatures to calculate the equilibrium compositions at - in this case
-# we're going from 1000 to 25000 K in 1000 K steps.
+# we're going from 1000 to 25000 K in 50 K steps.
 # Also initialise a list to store the property values at each temperature.
 
-temperatures = np.arange(1000, 25000, 1000)
+temperatures = np.arange(500, 25000, 100)
 density = []
 h = []
 cp = []
