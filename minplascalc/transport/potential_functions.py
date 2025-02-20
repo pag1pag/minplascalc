@@ -344,7 +344,7 @@ def psiconst(s: int) -> float:
     .. math::
 
         \psi(s) = \sum_{n=1}^{s} \frac{1}{n}
-    """ 
+    """
     if s == 1:
         return 0
     else:
