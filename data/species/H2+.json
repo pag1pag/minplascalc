@@ -1,0 +1,22 @@
+{
+    "name": "H2+",
+    "stoichiometry": {
+        "H": 2
+    },
+    "molarmass": 0.0020154514200903806,
+    "chargenumber": 1,
+    "polarisability": 4.69e-31,
+    "multiplicity": 2,
+    "effectiveelectrons": null,
+    "electroncrosssection": null,
+    "emissionlines": [],
+    "dissociationenergy": Infinity,
+    "ionisationenergy": Infinity,
+    "sigma_s": 2,
+    "g0": 2,
+    "w_e": 4.611932875943134e-20,
+    "b_e": 6.001054924505409e-22,
+    "sources": [
+        "NIST Chemistry WebBook, NIST Standard Reference Database Number 69. PJ Linstrom and WG Mallard (Editors), National Institute of Standards and Technology, Gaithersburg MD., http://webbook.nist.gov/chemistry/, doi:10.18434/T4D303"
+    ]
+}

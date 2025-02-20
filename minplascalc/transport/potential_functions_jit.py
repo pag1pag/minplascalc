@@ -94,7 +94,7 @@ def pot_parameters_ion_neut_jit(
     .. math::
 
         r_e = 1.767 \frac{\alpha_i^{1 / 3}+\alpha_n^{1 / 3}}
-                         {\left(\alpha_i \alpha_n \[ 1 + \frac{1}{\rho}\] \right)^{0.095}}
+                         {\left(\alpha_i \alpha_n \left[ 1 + \frac{1}{\rho}\right] \right)^{0.095}}
 
     where :math:`\alpha_i` is the polarisability of the ion species and :math:`\alpha_n` is the polarisability
     of the neutral species, both in Å^3.
@@ -298,7 +298,7 @@ def coulomb_logarithm_ii_jit(
     .. math::
 
         \lambda_{i i'} = 23 - \ln \left( \frac{Z_i Z_i'}{T}
-            \left(\frac{n_i Z_i^2}{T} + \frac{n_i' Z_i'^2}{T} \right)^{1 / 2}\right)}
+            \left(\frac{n_i Z_i^2}{T} + \frac{n_i' Z_i'^2}{T} \right)^{1 / 2}\right)
 
     where:
 

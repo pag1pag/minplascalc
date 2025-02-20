@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import minplascalc as mpc
+from minplascalc.utils import get_path_to_data
 
 # %%
 # Create mixture object for the species we're interested in.
@@ -47,12 +48,10 @@ oxygen_mixture = mpc.mixture.lte_from_names(
 # Also initialise a list to store the property values at each temperature.
 
 temperatures = np.linspace(1000, 25000, 100)
-viscosity, electrical_conductivity, thermal_conductivity, total_emission_coefficient = (
-    [],
-    [],
-    [],
-    [],
-)
+viscosity = []
+electrical_conductivity = []
+thermal_conductivity = []
+total_emission_coefficient = []
 
 # %%
 # Perform the composition calculations.
@@ -79,6 +78,22 @@ for T in temperatures:
     thermal_conductivity.append(oxygen_mixture.calculate_thermal_conductivity())
 
 # %%
+# Load reference data.
+# --------------------
+
+# Load reference data from Boulos et al. (2023) for comparison.
+# The data is stored in a CSV file in the `.\data\papers\Boulos2023` directory.
+
+data_path = get_path_to_data("papers", "Boulos2023", "O2.csv")
+data = np.genfromtxt(data_path, delimiter=",", skip_header=2)
+
+# Extract the temperature, viscosity, thermal conductivity and electrical conductivity.
+temperatures_ref = data[:, 0]
+viscosity_ref = data[:, 4]
+thermal_conductivity_ref = data[:, 5]
+electrical_conductivity_ref = data[:, 6]
+
+# %%
 # Plot the results.
 # -----------------
 #
@@ -89,24 +104,33 @@ fig, axs = plt.subplots(2, 2, figsize=(10, 7), sharex=True)
 ax = axs[0, 0]
 ax.set_title(r"$\mathregular{O_2}$ plasma viscosity")
 ax.set_ylabel("$\\mathregular{\\mu [Pa.s]}$")
-ax.plot(temperatures, viscosity)
+ax.plot(temperatures, viscosity, "k", label="minplascalc")
+ax.plot(temperatures_ref, viscosity_ref, "k--", label="Boulos et al. (2023)")
+ax.legend()
 
 ax = axs[0, 1]
 ax.set_title(r"$\mathregular{O_2}$ plasma thermal conductivity")
 ax.set_ylabel("$\\mathregular{\\kappa [W/(m.K)]}$")
-ax.plot(temperatures, thermal_conductivity)
+ax.plot(temperatures, thermal_conductivity, "k", label="minplascalc")
+ax.plot(temperatures_ref, thermal_conductivity_ref, "k--", label="Boulos et al. (2023)")
+ax.legend()
 
 ax = axs[1, 0]
 ax.set_title(r"$\mathregular{O_2}$ plasma electrical conductivity")
 ax.set_xlabel("T [K]")
 ax.set_ylabel("$\\mathregular{\\sigma [S/m]}$")
-ax.plot(temperatures, electrical_conductivity)
+ax.plot(temperatures, electrical_conductivity, "k", label="minplascalc")
+ax.plot(
+    temperatures_ref, electrical_conductivity_ref, "k--", label="Boulos et al. (2023)"
+)
+ax.legend()
 
 ax = axs[1, 1]
 ax.set_title(r"$\mathregular{O_2}$ plasma emission coefficient")
 ax.set_xlabel("T [K]")
 ax.set_ylabel("$\\mathregular{\\epsilon_{tot} [W/(m^3.sr)]}$")
-ax.plot(temperatures, total_emission_coefficient)
+ax.plot(temperatures, total_emission_coefficient, "k", label="minplascalc")
+ax.legend()
 
 plt.tight_layout()
 
