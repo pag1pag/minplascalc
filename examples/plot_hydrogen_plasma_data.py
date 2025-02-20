@@ -49,7 +49,7 @@ hydrogen_mixture = mpc.mixture.lte_from_names(
 # we're going from 1000 to 25000 K in 1000 K steps.
 # Also initialise a list to store the property values at each temperature.
 
-temperatures = np.linspace(1000, 25000, 1000)
+temperatures = np.arange(1000, 25000, 1000)
 density = []
 h = []
 cp = []
