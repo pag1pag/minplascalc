@@ -162,7 +162,7 @@ def DTi_jit(
     - :math:`T` is the temperature of the mixture.
 
 
-    The elements of :math:`a_{i 0}}` are given by equation 5 of [Devoto1966]_:
+    The elements of :math:`a_{i 0}` are given by equation 5 of [Devoto1966]_:
 
     .. math::
 

@@ -125,7 +125,7 @@ def DTi(mixture: "LTE") -> float:
     - :math:`T` is the temperature of the mixture.
 
 
-    The elements of :math:`a_{i 0}}` are given by equation 5 of [Devoto1966]_:
+    The elements of :math:`a_{i 0}` are given by equation 5 of [Devoto1966]_:
 
     .. math::
 
@@ -328,8 +328,8 @@ def thermalconductivity(
     .. math::
 
         \vec{d_i} = \vec{\nabla} x_i
-                  + \left(x_i\right. & \left.-\frac{\rho_i}{\rho}\right) \vec{\nabla} \ln p
-                  - \frac{\rho_i}{p \rho}\left(\frac{\rho}{m_i} X _i-\sum_{i=1}^{\prime} n_l X _l\right)
+                  + \left(x_i-\frac{\rho_i}{\rho}\right) \vec{\nabla} \ln p
+                  - \frac{\rho_i}{p\rho}\left(\frac{\rho}{m_i} \vec{X_i}-\sum_{i=1}^{\nu} n_l \vec{X_l}\right)
 
     Assuming there is no pressure gradient and no external forces, the equation simplifies to:
 

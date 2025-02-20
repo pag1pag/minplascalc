@@ -114,7 +114,7 @@ def pot_parameters_ion_neut(
     .. math::
 
         r_e = 1.767 \frac{\alpha_i^{1 / 3}+\alpha_n^{1 / 3}}
-                         {\left(\alpha_i \alpha_n \[ 1 + \frac{1}{\rho}\] \right)^{0.095}}
+                         {\left(\alpha_i \alpha_n \left[ 1 + \frac{1}{\rho}\right] \right)^{0.095}}
 
     where :math:`\alpha_i` is the polarisability of the ion species and :math:`\alpha_n` is the polarisability
     of the neutral species, both in m^3.
@@ -298,7 +298,7 @@ def coulomb_logarithm_charged(
     .. math::
 
         \lambda_{i i'} = 23 - \ln \left( \frac{Z_i Z_i'}{T}
-            \left(\frac{n_i Z_i^2}{T} + \frac{n_i' Z_i'^2}{T} \right)^{1 / 2}\right)}
+            \left(\frac{n_i Z_i^2}{T} + \frac{n_i' Z_i'^2}{T} \right)^{1 / 2}\right)
     """
     T_eV = T * u.K_to_eV  # Convert temperature to eV.
     if species_i.name == "e" and species_j.name == "e":
@@ -325,6 +325,26 @@ def coulomb_logarithm_charged(
 
 @njit
 def psiconst(s: int) -> float:
+    r"""Calculate the constant psi(s) for the fit function of the total resonant transfert cross section.
+
+    Parameters
+    ----------
+    s : int
+        Number of terms to sum.
+
+    Returns
+    -------
+    float
+        Constant psi(s).
+
+    Notes
+    -----
+    :math:`\psi(s)` is defined as:
+
+    .. math::
+
+        \psi(s) = \sum_{n=1}^{s} \frac{1}{n}
+    """ 
     if s == 1:
         return 0
     else:
