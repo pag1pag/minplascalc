@@ -1,6 +1,6 @@
 r"""
 Example: Calculating the properties of an :math:`H_2` plasma.
-====================================================
+=============================================================
 
 Compute and compare the properties of an :math:`H_2` plasma using minplascalc and reference
 data from [Boulos2023]_.
