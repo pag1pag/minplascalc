@@ -21,9 +21,9 @@ class LTE:
         x0: list[float],
         T: float,
         P: float,
-        gfe_ni0: float,
-        gfe_reltol: float,
-        gfe_maxiter: int,
+        gfe_initial_number_particle: float,
+        gfe_rtol: float,
+        gfe_max_iteration: int,
     ):
         r"""Local Thermodynamic Equilibrium (LTE) plasma mixture object.
 
@@ -45,16 +45,14 @@ class LTE:
             LTE plasma temperature, in :math:`\text{K}`.
         P : float
             LTE plasma pressure, in :math:`\text{Pa}`.
-        gfe_ni0 : float
+        gfe_initial_number_particle : float
             Gibbs Free Energy minimiser solution control: Starting estimate for
             number of particles of each species. Typically O(1e20).
-            NOTE: This is the the number of particles, not the number density.
-            TODO: change gfe_ni0 to gfe_Ni0
-        gfe_reltol : float
+        gfe_rtol : float
             Gibbs Free Energy minimiser solution control: Relative tolerance at
             which solution for particle numbers is considered converged.
             Typically O(1e-10).
-        gfe_maxiter : int
+        gfe_max_iteration : int
             Gibbs Free Energy minimiser solution control: Bailout loop count
             value for iterative solver. Typically O(1e3).
 
@@ -81,9 +79,9 @@ class LTE:
         self.x0 = x0
         self.T = T
         self.P = P
-        self.gfe_ni0 = gfe_ni0
-        self.gfe_reltol = gfe_reltol
-        self.gfe_maxiter = gfe_maxiter
+        self.gfe_initial_number_particle = gfe_initial_number_particle
+        self.gfe_rtol = gfe_rtol
+        self.gfe_max_iteration = gfe_max_iteration
 
         self.__isLTE = False  # Flag to indicate if LTE composition has been calculated.
 
@@ -156,8 +154,8 @@ class LTE:
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(species={self.species},"
-            f"x0={self.x0},T={self.T},P={self.P},gfe_ni0={self.gfe_ni0},"
-            f"gfe_reltol={self.gfe_reltol},gfe_maxiter={self.gfe_maxiter})"
+            f"x0={self.x0},T={self.T},P={self.P},gfe_initial_number_particle={self.gfe_initial_number_particle},"
+            f"gfe_rtol={self.gfe_rtol},gfe_max_iteration={self.gfe_max_iteration})"
         )
 
     def __str__(self):
@@ -290,7 +288,7 @@ class LTE:
                 A_matrix_constraints_transpose[i, j] = sc
             b_vector_constraints[i] = element["N_tot"]
 
-        for j, qc in enumerate(sp.chargenumber for sp in self.species):
+        for j, qc in enumerate(sp.charge_number for sp in self.species):
             A_matrix_constraints[j, -1] = qc
             A_matrix_constraints_transpose[-1, j] = qc
 
@@ -300,7 +298,9 @@ class LTE:
             b_vector_constraints,
         )
 
-    def __recalcE0i(self) -> tuple[np.ndarray, np.ndarray]:
+    def __calculate_reference_energy_and_ionisation_energy_lowering(
+        self,
+    ) -> tuple[np.ndarray, np.ndarray]:
         r"""Calculate the reference energy values for all species.
 
         Calculate the reference energy values for all species, including
@@ -368,12 +368,12 @@ class LTE:
         # negative of the dissociation energy.
         for i, sp in enumerate(self.species):
             if sum(sp.stoichiometry.values()) >= 2:
-                E0[i] = -sp.dissociationenergy
+                E0[i] = -sp.dissociation_energy
 
         # Calculate the effective charge number z*.
         # The effective charge number is the sum of the square of the charge
         # number of each species multiplied by the number density of that species.
-        charges_numbers = np.array([sp.chargenumber for sp in self.species])
+        charges_numbers = np.array([sp.charge_number for sp in self.species])
         z_star = self.calculate_effective_charge_number(
             charges_numbers,
             number_densities,
@@ -393,7 +393,7 @@ class LTE:
         )
 
         # Get the neutral species.
-        neutral_species = [sp for sp in self.species if sp.chargenumber == 0]
+        neutral_species = [sp for sp in self.species if sp.charge_number == 0]
 
         # Calculate the reference energy for each species.
         for neutral_sp in neutral_species:
@@ -403,12 +403,12 @@ class LTE:
                 for i, sp in enumerate(self.species)
                 if (
                     sp.stoichiometry == neutral_sp.stoichiometry
-                    and sp.chargenumber <= 0
+                    and sp.charge_number <= 0
                 )
             ]
             # Sort the negatively charged species by charge number in descending order.
             # Example: -2, -1, 0.
-            negatively_charged_sp.sort(key=lambda sp: sp[1].chargenumber, reverse=True)
+            negatively_charged_sp.sort(key=lambda sp: sp[1].charge_number, reverse=True)
 
             # Get the positively charged species with the same stoichiometry.
             positively_charged_sp = [
@@ -416,12 +416,14 @@ class LTE:
                 for i, sp in enumerate(self.species)
                 if (
                     sp.stoichiometry == neutral_sp.stoichiometry
-                    and sp.chargenumber >= 0
+                    and sp.charge_number >= 0
                 )
             ]
             # Sort the positively charged species by charge number in ascending order.
             # Example: 0, 1, 2.
-            positively_charged_sp.sort(key=lambda sp: sp[1].chargenumber, reverse=False)
+            positively_charged_sp.sort(
+                key=lambda sp: sp[1].charge_number, reverse=False
+            )
 
             # Calculate the reference energy for non-neutral species.
             # .. Positive ions.
@@ -430,7 +432,7 @@ class LTE:
             ):
                 # The reference energy is the reference energy of the species with one fewer
                 # charge number, plus the lowered ionisation energy of that species.
-                E0[ito] = E0[ifrom] + spfrom.ionisationenergy - dE[ifrom]
+                E0[ito] = E0[ifrom] + spfrom.ionisation_energy - dE[ifrom]
 
                 # Code example:
                 # positively_charged_sp = [(index_H, H), (index_H+, H+), (index_H2+, H2+)]
@@ -440,17 +442,17 @@ class LTE:
                 # 1st iteration:
                 #   (ifrom, spfrom) = (index_H, H)
                 #   (ito, spto) = (index_H+, H+)
-                #   E0[index_H+] = E0[index_H] + H.ionisationenergy - dE[index_H]
-                #                = 0 + H.ionisationenergy - 0
+                #   E0[index_H+] = E0[index_H] + H.ionisation_energy - dE[index_H]
+                #                = 0 + H.ionisation_energy - 0
                 # 2nd iteration:
                 #   (ifrom, spfrom) = (index_H+, H+)
                 #   (ito, spto) = (index_H2+, H2+)
-                #   E0[index_H2+] = E0[index_H+] + H+.ionisationenergy - dE[index_H+]
+                #   E0[index_H2+] = E0[index_H+] + H+.ionisation_energy - dE[index_H+]
             # .. Negative ions.
             for (ifrom, spfrom), (ito, spto) in zip(
                 negatively_charged_sp[:-1], negatively_charged_sp[1:]
             ):
-                E0[ito] = E0[ifrom] - spto.ionisationenergy + dE[ito]
+                E0[ito] = E0[ifrom] - spto.ionisation_energy + dE[ito]
                 # NOTE: For negative ions, dE is equal to zero.
 
         # Return the reference energy and ionisation energy lowering.
@@ -615,7 +617,7 @@ class LTE:
         # Initialise the number of particles of each species.
         # The estimate is the same for all species, and is given by the user.
         # It is typically O(1e20).
-        self.__Ni = np.full(nb_species, self.gfe_ni0)
+        self.__Ni = np.full(nb_species, self.gfe_initial_number_particle)
 
         # Minimise the Gibbs free energy.
         # The minimisation is done iteratively, with a relaxation factor to
@@ -630,12 +632,14 @@ class LTE:
         while not minimiser_success and governor_iters < len(governor_factors):
             minimiser_success = True  # Assume the minimiser will converge.
             governor_factor = governor_factors[governor_iters]  # Relaxation factor.
-            relative_tolerance = self.gfe_reltol * 10  # Initial relative tolerance.
+            relative_tolerance = self.gfe_rtol * 10  # Initial relative tolerance.
             minimiser_iters = 0  # Iteration counter for the minimiser.
 
-            while relative_tolerance > self.gfe_reltol:
+            while relative_tolerance > self.gfe_rtol:
                 # Calculate the reference energy and ionisation energy lowering.
-                self.__E0, self.__dE = self.__recalcE0i()
+                self.__E0, self.__dE = (
+                    self.__calculate_reference_energy_and_ionisation_energy_lowering()
+                )
                 N_tot = self.__Ni.sum()  # Total number of particles in the plasma.
                 V = N_tot * kbt / self.P  # Volume of the plasma, in m3.
 
@@ -653,7 +657,7 @@ class LTE:
 
                 # Calculate the total partition function of each species.
                 total = [
-                    species.partitionfunction_total(V, self.T, dE)
+                    species.total_partition_function(V, self.T, dE)
                     for species, dE in zip(self.species, self.__dE)
                 ]
 
@@ -701,7 +705,7 @@ class LTE:
                 ) * self.__Ni + relaxation_factor * new_Ni
 
                 minimiser_iters += 1
-                if minimiser_iters > self.gfe_maxiter:
+                if minimiser_iters > self.gfe_max_iteration:
                     minimiser_success = False
                     break
             governor_iters += 1
@@ -744,7 +748,7 @@ class LTE:
         * :math:`M_i` is the molar mass of species :math:`i`, in :math:`\text{kg.mol}^{-1}`.
         """
         number_densities = self.calculate_composition()  # particules/m^3
-        molar_masses = [sp.molarmass for sp in self.species]  # kg/mol
+        molar_masses = [sp.molar_mass for sp in self.species]  # kg/mol
         return (
             sum(n_i * M_i for n_i, M_i in zip(number_densities, molar_masses)) / u.N_a
         )  # kg/m3 = (particules/m^3 * kg/mol) / (particules/mol)
@@ -798,7 +802,7 @@ class LTE:
         ]  # J/particle
 
         masses = [
-            sp.molarmass / u.N_a for sp in self.species
+            sp.molar_mass / u.N_a for sp in self.species
         ]  # (kg/mol) / (particle/mol) = kg/particle
 
         return np.array(enthalpies) / np.array(masses)  # J/kg
@@ -834,19 +838,19 @@ class LTE:
         * :math:`M_i` is the molar mass of species :math:`i`, in :math:`\text{kg.mol}^{-1}`.
         """
         number_densities = self.calculate_composition()  # m^-3
-        molar_masses = [sp.molarmass for sp in self.species]  # kg/mol
+        molar_masses = [sp.molar_mass for sp in self.species]  # kg/mol
 
         density = self.calculate_density()  # kg/m3
 
         mass_enthalpies = self.calculate_species_enthalpies()  # J/kg
-        masses = np.array([sp.molarmass / u.N_a for sp in self.species])  # kg/particle
+        masses = np.array([sp.molar_mass / u.N_a for sp in self.species])  # kg/particle
         enthalpies = mass_enthalpies * masses  # J/particle
 
         # Get the species with the lowest reference energy.
         i_min = np.argmin(
             self.__E0
         )  # Index of the species with the lowest reference energy.
-        h_mol_0 = self.__E0[i_min] / self.species[i_min].molarmass  # J/(kg/mol)
+        h_mol_0 = self.__E0[i_min] / self.species[i_min].molar_mass  # J/(kg/mol)
 
         weighted_enthalpy = sum(
             n_i * (h_i - h_mol_0 * M_i)

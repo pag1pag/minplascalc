@@ -80,7 +80,7 @@ def Dij(mixture: "LTE") -> np.ndarray:
     """
     nb_species = len(mixture.species)
     number_densities = mixture.calculate_composition()  # m^-3
-    masses = np.array([sp.molarmass / u.N_a for sp in mixture.species])  # kg
+    masses = np.array([sp.molar_mass / u.N_a for sp in mixture.species])  # kg
     rho = mixture.calculate_density()  # kg/m^3
 
     diffusion_matrix = np.zeros((nb_species, nb_species))
@@ -148,7 +148,7 @@ def DTi(mixture: "LTE") -> float:
     """
     nb_species = len(mixture.species)
     number_densities = mixture.calculate_composition()
-    masses = np.array([sp.molarmass / u.N_a for sp in mixture.species])
+    masses = np.array([sp.molar_mass / u.N_a for sp in mixture.species])
 
     qq = q(mixture)
 
@@ -207,7 +207,7 @@ def viscosity(mixture: "LTE") -> float:
     """
     nb_species = len(mixture.species)
     number_densities = mixture.calculate_composition()
-    masses = np.array([sp.molarmass / u.N_a for sp in mixture.species])
+    masses = np.array([sp.molar_mass / u.N_a for sp in mixture.species])
     qq = qhat(mixture)
 
     return viscosity_jit(nb_species, number_densities, masses, mixture.T, qq)
@@ -253,9 +253,9 @@ def electricalconductivity(mixture: "LTE") -> float:
 
     The sum is over all ionic species in the mixture.
     """
-    charge_numbers = np.array([sp.chargenumber for sp in mixture.species])
+    charge_numbers = np.array([sp.charge_number for sp in mixture.species])
     number_densities = mixture.calculate_composition()
-    masses = np.array([sp.molarmass / u.N_a for sp in mixture.species])
+    masses = np.array([sp.molar_mass / u.N_a for sp in mixture.species])
     rho = mixture.calculate_density()
 
     D1 = Dij(mixture)[-1, :]
@@ -369,7 +369,7 @@ def thermalconductivity(
     """
     nb_species = len(mixture.species)
     number_densities = mixture.calculate_composition()
-    masses = np.array([sp.molarmass / u.N_a for sp in mixture.species])
+    masses = np.array([sp.molar_mass / u.N_a for sp in mixture.species])
     n_tot = np.sum(number_densities)
     rho = mixture.calculate_density()
     hv = mixture.calculate_species_enthalpies()

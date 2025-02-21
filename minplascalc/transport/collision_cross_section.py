@@ -83,10 +83,10 @@ def Qe(species_i: "Species", l: int, s: int, T: float) -> float:
     --------
     - LXCat Database: http://www.lxcat.net/
     """
-    if isinstance(species_i.electroncrosssection, (tuple, list)):
-        D1, D2, D3, D4 = species_i.electroncrosssection
-    elif isinstance(species_i.electroncrosssection, float):
-        D1, D2, D3, D4 = species_i.electroncrosssection, 0, 0, 0
+    if isinstance(species_i.electron_cross_section, (tuple, list)):
+        D1, D2, D3, D4 = species_i.electron_cross_section
+    elif isinstance(species_i.electron_cross_section, float):
+        D1, D2, D3, D4 = species_i.electron_cross_section, 0, 0, 0
     else:
         raise ValueError("Invalid electron cross section data.")
     barg = D3 / 2 + s + 2
@@ -171,7 +171,7 @@ def Qnn(
 
     # Get the equilibrium distance r_e and binding energy epsilon_0.
     alpha_i, alpha_j = species_i.polarisability * 1e30, species_j.polarisability * 1e30
-    n_eff_i, n_eff_j = species_i.effectiveelectrons, species_j.effectiveelectrons
+    n_eff_i, n_eff_j = species_i.effective_electrons, species_j.effective_electrons
     spin_multiplicity_i, spin_multiplicity_j = (
         species_i.multiplicity,
         species_j.multiplicity,
@@ -268,7 +268,7 @@ def Qin(
         )
     # Get the equilibrium distance r_e and binding energy epsilon_0.
     alpha_i, alpha_j = species_i.polarisability * 1e30, species_j.polarisability * 1e30
-    z_ion = species_i.chargenumber
+    z_ion = species_i.charge_number
     spin_multiplicity_i, spin_multiplicity_j = (
         species_i.multiplicity,
         species_j.multiplicity,
@@ -337,12 +337,12 @@ def Qtr(
     --------
     - https://www.wellesu.com/10.1007/978-1-4419-8172-1_4
     """
-    if species_i.chargenumber < species_j.chargenumber:
-        a, b = A(species_i.ionisationenergy), B(species_i.ionisationenergy)
-        M = species_i.molarmass
+    if species_i.charge_number < species_j.charge_number:
+        a, b = A(species_i.ionisation_energy), B(species_i.ionisation_energy)
+        M = species_i.molar_mass
     else:
-        a, b = A(species_j.ionisationenergy), B(species_j.ionisationenergy)
-        M = species_j.molarmass
+        a, b = A(species_j.ionisation_energy), B(species_j.ionisation_energy)
+        M = species_j.molar_mass
     ln_term = np.log(4 * u.R * T / M)
 
     # Same as eq. 12 of [Devoto1967], with rearranged terms.
@@ -408,8 +408,8 @@ def Qc(
     term2 = (
         (
             ke  # TODO: with is there a facotr ke=1/(4*pi*eps0)? Error in documentation or code?
-            * species_i.chargenumber
-            * species_j.chargenumber
+            * species_i.charge_number
+            * species_j.charge_number
             * u.e**2
             / (2 * u.k_b * T)
         )
@@ -466,7 +466,7 @@ def Qij(
     ValueError
         If the collision type is unknown.
     """
-    if species_i.chargenumber != 0 and species_j.chargenumber != 0:
+    if species_i.charge_number != 0 and species_j.charge_number != 0:
         # For charged species, like ion-ion collisions, use the Coulomb collision integral.
         return Qc(species_i, ni, species_j, nj, l, s, T)
     elif species_j.name == "e":
@@ -475,20 +475,20 @@ def Qij(
     elif species_i.name == "e":
         # For electron-neutral collisions, use the electron-neutral collision integral.
         return Qe(species_j, l, s, T)
-    elif species_i.chargenumber == 0 and species_j.chargenumber == 0:
+    elif species_i.charge_number == 0 and species_j.charge_number == 0:
         # For neutral-neutral collisions, use the neutral-neutral collision integral.
         return Qnn(species_i, species_j, l, s, T)
     elif (
         species_i.stoichiometry == species_j.stoichiometry
-        and abs(species_i.chargenumber - species_j.chargenumber) == 1
+        and abs(species_i.charge_number - species_j.charge_number) == 1
         and l % 2 == 1
     ):
         # For neutral-ion (with ion charge difference of 1) --> resonant charge transfer collisions.
         return Qtr(species_i, species_j, s, T)
-    elif species_i.chargenumber == 0:
+    elif species_i.charge_number == 0:
         # For neutral-ion collisions, use the ion-neutral collision integral.
         return Qin(species_j, species_i, l, s, T)
-    elif species_j.chargenumber == 0:
+    elif species_j.charge_number == 0:
         # For ion-neutral collisions, use the ion-neutral collision integral.
         return Qin(species_i, species_j, l, s, T)
     else:

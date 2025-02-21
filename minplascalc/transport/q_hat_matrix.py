@@ -37,7 +37,7 @@ def qhat(mixture: "LTE") -> np.ndarray:
     """
     nb_species = len(mixture.species)
     number_densities = mixture.calculate_composition()
-    masses = np.array([sp.molarmass / u.N_a for sp in mixture.species])
+    masses = np.array([sp.molar_mass / u.N_a for sp in mixture.species])
 
     Q11 = Qij_mix(mixture, 1, 1)
     Q12 = Qij_mix(mixture, 1, 2)

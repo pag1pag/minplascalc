@@ -211,9 +211,7 @@ def q22_jit(
                     * Q13[i, l]
                     - 210 * masses[l] ** 4 * Q14[i, l]
                     + 90 * masses[l] ** 4 * Q15[i, l]
-                    + 24
-                    * (masses[j] * masses[l]) ** 2
-                    * Q33[i, j]  # TODO: Error here? Should be Q33[i, l]?
+                    + 24 * (masses[j] * masses[l]) ** 2 * Q33[i, l]
                 ) + (delta(i, j) + delta(j, l)) * (
                     7
                     * masses[j]
@@ -356,19 +354,15 @@ def q23_jit(
                     * masses[l] ** 2
                     * (450 * masses[j] ** 2 + 217 * masses[l] ** 2)
                     * Q13[i, l]
-                    + 5  # TODO: Error here? Should be a minus?
+                    - 5
                     / 2
                     * masses[l] ** 2
                     * (198 * masses[j] ** 2 + 301 * masses[l] ** 2)
                     * Q14[i, l]
                     + 615 * masses[l] ** 4 * Q15[i, l]
                     - 210 * masses[l] ** 4 * Q16[i, l]
-                    + 108
-                    * (masses[j] * masses[l]) ** 2
-                    * Q33[i, j]  # TODO: Error here? Should be Q33[i, l]?
-                    - 120
-                    * (masses[j] * masses[l]) ** 2
-                    * Q34[i, j]  # TODO: Error here? Should be Q34[i, l]?
+                    + 108 * (masses[j] * masses[l]) ** 2 * Q33[i, l]
+                    - 120 * (masses[j] * masses[l]) ** 2 * Q34[i, l]
                 ) + (delta(i, j) + delta(j, l)) * (
                     63
                     / 4
@@ -452,7 +446,7 @@ def q33_jit(
                         + 651 * masses[l] ** 4
                     )
                     * Q13[i, l]
-                    + 15  # TODO: Error here? Should be a minus?
+                    - 15
                     / 2
                     * masses[l] ** 4
                     * (594 * masses[j] ** 2 + 301 * masses[l] ** 2)
@@ -463,21 +457,13 @@ def q33_jit(
                     * (26 * masses[j] ** 2 + 41 * masses[l] ** 2)
                     * Q15[i, l]
                     - 1890 * masses[l] ** 6 * Q16[i, l]
-                    - 560  # TODO: Error here? Should be a plus?
-                    * masses[l] ** 6
-                    * Q17[i, l]
+                    + 560 * masses[l] ** 6 * Q17[i, l]
                     + 18
                     * (masses[j] * masses[l]) ** 2
                     * (10 * masses[j] ** 2 + 27 * masses[l] ** 2)
-                    * Q33[i, j]  # TODO: Error here? Should be Q33[i, l]?
-                    - 1080
-                    * masses[j] ** 2
-                    * masses[l] ** 4
-                    * Q34[i, j]  # TODO: Error here? Should be Q34[i, l]?
-                    + 720
-                    * masses[j] ** 2
-                    * masses[l] ** 4
-                    * Q35[i, j]  # TODO: Error here? Should be Q35[i, l]?
+                    * Q33[i, l]
+                    - 1080 * masses[j] ** 2 * masses[l] ** 4 * Q34[i, l]
+                    + 720 * masses[j] ** 2 * masses[l] ** 4 * Q35[i, l]
                 ) + (delta(i, j) + delta(j, l)) * (
                     189
                     / 16
