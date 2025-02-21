@@ -168,7 +168,34 @@ class LTE:
             f"Temperature: {self.T} K\nPressure: {self.P} Pa"
         )
 
-    def __get_elements(self) -> dict[str, str | int | float]:
+    def __get_elements(self) -> list[dict[str, str | list[float] | float]]:
+        r"""Get the unique elements in the species and their total number in the plasma.
+
+        Returns
+        -------
+        list[dict[str, str | list[float] | float]]
+            Dictionary with the unique elements in the species, their stoichiometric
+            coefficients in each species, and their total number in the plasma.
+
+            Keys:
+            - name: Element name, as a string.
+            - stoich_coeff: Stoichiometric coefficient of the element in each species, as a list.
+            - N_tot: Total number of the element in the plasma, in :math:`\text{particles.m}^{-3}`.
+
+        Notes
+        -----
+        The stoichiometric coefficient of an element in a species is the number of
+        atoms of that element in the species. For example, in the species N2, the
+        stoichiometric coefficient of N is 2.
+
+        The total number of an element in the plasma is the sum of the stoichiometric
+        coefficients of that element in each species, multiplied by the mole fraction
+        of that species, and multiplied by Avogadro's number.
+
+        See Also
+        --------
+        Mixture.calculate_composition : Calculate the LTE composition of the plasma.
+        """
         # Get the set of unique elements in the species.
         # Electrons are discarded.
         # Example: if species = {N2, O2, NO}, then unique_elements = {N, O}.
@@ -197,15 +224,68 @@ class LTE:
 
         return elements
 
-    def __get_constraints(self) -> tuple[np.ndarray, np.ndarray]:
-        A_matrix_constraints = np.zeros((len(self.species), len(self._elements)+1))
+    def __get_constraints(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        r"""Get the constraints for the Gibbs free energy minimiser.
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray, np.ndarray]
+            Matrices and vectors for the constraints of the minimiser.
+
+        Notes
+        -----
+        The constraints for the Gibbs free energy minimiser are the conservation
+        of the number of atoms of each element in the plasma, and the conservation
+        of charge neutrality. The constraints are defined by the following equations:
+
+        .. math::
+
+            \sum_j c_{ij} N_j = N_{\text{tot}, i}, \quad i = 1, 2, \ldots, n
+
+        where :math:`c_{ij}` is the stoichiometric coefficient of element :math:`i`
+        in species :math:`j`, :math:`N_j` is the number of particles of species :math:`j`,
+        and :math:`N_{\text{tot}, i}` is the total number of atoms of element :math:`i` in the plasma.
+
+        See Also
+        --------
+        Mixture.calculate_composition : Calculate the LTE composition of the plasma.
+        """
+        # Create the Gibbs free energy minimisation matrix and vector.
+        # Example:
+        #   if species = {N2, O2, NO, N2+, e-}, and x0 = [0.7, 0.2, 0.1, 0],
+        #   then nb_species = 5, elements = [{N, [2, 0, 1, 2], 1.5e24}, {O, [0, 2, 1, 0], 0.5e24}],
+        #   and minimiser_dof = 5 + 2 + 1 = 8.
+        #
+        #  gfe_matrix = [     N2  O2  NO  N2+  e-  N  O  charge
+        #           ┌ N2    [  0,  0,  0,  0,  0,  2,  0,  0],
+        #           │ O2    [  0,  0,  0,  0,  0,  0,  2,  0],
+        #   species ┥ NO    [  0,  0,  0,  0,  0,  1,  1,  0],
+        #           │ N2+   [  0,  0,  0,  0,  0,  2,  0,  1],
+        #           └ e-    [  0,  0,  0,  0,  0,  0,  0, -1],
+        #   element ┌  N    [  2,  0,  1,  2,  0,  0,  0,  0],
+        #           └  O    [  0,  2,  1,  0,  0,  0,  0,  0],
+        #   charge          [  0,  0,  0,  1, -1,  0,  0,  0],
+        # ]
+        # gfe_vector = [
+        #           ┌ N2     0,
+        #           │ O2     0,
+        #   species ┥ NO     0,
+        #           │ N2+    0,
+        #           └ e-     0,
+        #   element ┌  N     1.5e24,
+        #           └  O     0.5e24,
+        #   charge           0,
+        # ]
+        A_matrix_constraints = np.zeros((len(self.species), len(self._elements) + 1))
         A_matrix_constraints_transpose = np.zeros(
-            (len(self._elements)+1, len(self.species))
+            (len(self._elements) + 1, len(self.species))
         )
-        b_vector_constraints = np.zeros(len(self._elements)+1)
+        b_vector_constraints = np.zeros(len(self._elements) + 1)
 
         for i, element in enumerate(self._elements):
-            for j, sc in enumerate(element["stoich_coeff"]):
+            stoichiometric_coefficients = element["stoich_coeff"]
+            assert isinstance(stoichiometric_coefficients, list)
+            for j, sc in enumerate(stoichiometric_coefficients):
                 A_matrix_constraints[j, i] = sc
                 A_matrix_constraints_transpose[i, j] = sc
             b_vector_constraints[i] = element["N_tot"]
@@ -381,7 +461,7 @@ class LTE:
     def calculate_effective_charge_number(
         charge_numbers: np.ndarray,
         number_densities: np.ndarray,
-    ) -> np.ndarray:
+    ) -> float:
         # Calculate the effective charge number z*.
         # The effective charge number is the sum of the square of the charge
         # number of each species multiplied by the number density of that species.
