@@ -67,6 +67,7 @@ electrical_conductivity = []
 # snippet may take several seconds to complete.
 
 for T in temperatures:
+    print(f"Calculating properties at T = {T} K", end="\r")
     hydrogen_mixture.T = T
     density.append(hydrogen_mixture.calculate_density())
     h.append(hydrogen_mixture.calculate_enthalpy())
