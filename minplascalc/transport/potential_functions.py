@@ -76,12 +76,12 @@ def pot_parameters_neut_neut(
     alpha_i = species_i.polarisability * 1e30
     alpha_j = species_j.polarisability * 1e30
     # Effective long-range London coefficient, as defined in eq. 8 of [Laricchiuta2007]_.
-    if species_i.effectiveelectrons is None or species_j.effectiveelectrons is None:
+    if species_i.effective_electrons is None or species_j.effective_electrons is None:
         raise ValueError(
             "Effective number of electrons must be provided for neutral species."
         )
-    n_eff_i = species_i.effectiveelectrons
-    n_eff_j = species_j.effectiveelectrons
+    n_eff_i = species_i.effective_electrons
+    n_eff_j = species_j.effective_electrons
 
     r_e, epsilon_0 = pot_parameters_neut_neut_jit(alpha_i, alpha_j, n_eff_i, n_eff_j)
 
@@ -141,7 +141,7 @@ def pot_parameters_ion_neut(
     alpha_i = species_ion.polarisability * 1e30
     alpha_n = species_neutral.polarisability * 1e30
     # Charge number of the ion species.
-    Z_ion = species_ion.chargenumber
+    Z_ion = species_ion.charge_number
 
     # Return the equilibrium distance and the binding energy.
     r_e, epsilon_0 = pot_parameters_ion_neut_jit(alpha_i, alpha_n, Z_ion)
@@ -308,18 +308,18 @@ def coulomb_logarithm_charged(
     elif species_i.name == "e":
         # Electron-ion collisions.
         ne_cgs = n_i * 1e-6  # m^-3 to cm^-3
-        z_ion = species_j.chargenumber
+        z_ion = species_j.charge_number
         return coulomb_logarithm_ei_jit(ne_cgs, T_eV, z_ion)
     elif species_j.name == "e":
         # Ion-electron collisions, same as electron-ion collisions.
         ne_cgs = n_j * 1e-6  # m^-3 to cm^-3
-        z_ion = species_i.chargenumber
+        z_ion = species_i.charge_number
         return coulomb_logarithm_ei_jit(ne_cgs, T_eV, z_ion)
     else:
         # Ion-ion collisions.
         ni_cgs, nj_cgs = n_i * 1e-6, n_j * 1e-6  # m^-3 to cm^-3
-        z_ion_i = species_i.chargenumber
-        z_ion_j = species_j.chargenumber
+        z_ion_i = species_i.charge_number
+        z_ion_j = species_j.charge_number
         return coulomb_logarithm_ii_jit(ni_cgs, nj_cgs, T_eV, z_ion_i, z_ion_j)
 
 

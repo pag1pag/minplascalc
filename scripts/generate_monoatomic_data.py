@@ -93,15 +93,15 @@ electron_cross_section = None
 monoatomic_species = Monatomic(
     name=species,
     stoichiometry=stochoiometry,
-    molarmass=molar_mass,
-    chargenumber=charge_number,
-    ionisationenergy=ionisation_energy,
-    energylevels=energy_levels,
+    molar_mass=molar_mass,
+    charge_number=charge_number,
+    ionisation_energy=ionisation_energy,
+    energy_levels=energy_levels,
     polarisability=polarisability,
     multiplicity=multiplicity,
-    effectiveelectrons=effective_electrons,
-    electroncrosssection=electron_cross_section,
-    emissionlines=spectral_lines,
+    effective_electrons=effective_electrons,
+    electron_cross_section=electron_cross_section,
+    emission_lines=spectral_lines,
     sources=[
         "Kramida, A., Ralchenko, Yu., Reader, J. and NIST ASD Team (2024)."
         "NIST Atomic Spectra Database (version 5.12), [Online]."
