@@ -83,7 +83,10 @@ total_emission_coefficient: list[list[float]] = [[], [], []]
 # snippet may take several tens of selectrical_conductivitys to complete.
 
 for i, sico_mixture in enumerate(sico_mixtures):
+    print(f"Calculating properties for {sico_mixture}", end="\n")
     for T in temperatures:
+        print(f"Calculating properties at T = {T:.2e} K", end="\r")
+
         sico_mixture.T = T
 
         viscosity[i].append(sico_mixture.calculate_viscosity())

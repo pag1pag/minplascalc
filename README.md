@@ -43,10 +43,10 @@ git clone https://github.com/pag1pag/minplascalc
 cd minplascalc
 ```
 
-For best experience create a new conda environment (e.g. minplascalc-env) with Python 3.11:
+For best experience create a new conda environment (e.g. minplascalc-env) with Python 3.13:
 
 ```
-conda create -n minplascalc-env -c conda-forge python=3.11 -y
+conda create -n minplascalc-env -c conda-forge python=3.13 -y
 conda activate minplascalc-env
 ```
 

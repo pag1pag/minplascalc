@@ -25,7 +25,7 @@ SPECIES_PATH = DATAPATH / "species"
 class BaseSpecies:
     def __init__(self):
         self.molarmass: float
-        """Molar mass of the species in :math:`\text{kg.mol}^{-1}`."""
+        r"""Molar mass of the species in :math:`\text{kg.mol}^{-1}`."""
 
     def partitionfunction_total(self, V: float, T: float, dE: float) -> float:
         r"""Calculate the total partition function for the species.
@@ -66,7 +66,7 @@ class BaseSpecies:
         )
 
     def partitionfunction_translational(self, T: float) -> float:
-        r"""Calculate the translational partition function for the species.
+        r"""Calculate the volumic translational partition function for the species.
 
         Parameters
         ----------
@@ -76,11 +76,11 @@ class BaseSpecies:
         Returns
         -------
         float
-            The translational partition function.
+            The volumic translational partition function, in :math:`\text{m}^{-3}`.
 
         Notes
         -----
-        The translational partition function is given by:
+        The volumic translational partition function is given by:
 
         .. math::
 

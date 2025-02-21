@@ -2,6 +2,7 @@ import logging
 import warnings
 
 import numpy as np
+from numba import njit
 
 from minplascalc import functions_radiation
 from minplascalc import species as _species
@@ -88,6 +89,16 @@ class LTE:
 
         self.__Ni = np.zeros(len(self.species))  # Number of particles of each species.
 
+        # Methods to call only once.
+        self._elements = (
+            self.__get_elements()
+        )  # Unique elements in the species, used in the minimiser.
+        (
+            self._A_matrix_constraints,
+            self._A_matrix_constraints_transpose,
+            self._b_vector_constraints,
+        ) = self.__get_constraints()  # Constraints for the minimiser.
+
     @property
     def species(self):
         return self.__species
@@ -96,8 +107,7 @@ class LTE:
     def species(self, species):
         raise TypeError(
             "Attribute species is read-only. Please create a new "
-            "Mixture object if you wish to change the plasma "
-            "species."
+            "Mixture object if you wish to change the plasma species."
         )
 
     @property
@@ -111,6 +121,14 @@ class LTE:
             self.__x0 = tuple(
                 list(x0) + [0]
             )  # Add electron mole fraction, set to zero.
+            self._elements = (
+                self.__get_elements()
+            )  # Unique elements in the species, used in the minimiser.
+            (
+                self._A_matrix_constraints,
+                self._A_matrix_constraints_transpose,
+                self._b_vector_constraints,
+            ) = self.__get_constraints()  # Constraints for the minimiser.
         else:
             raise ValueError(
                 "Please specify constraint mole fractions for all "
@@ -150,12 +168,144 @@ class LTE:
             f"Temperature: {self.T} K\nPressure: {self.P} Pa"
         )
 
+    def __get_elements(self) -> list[dict[str, str | list[float] | float]]:
+        r"""Get the unique elements in the species and their total number in the plasma.
+
+        Returns
+        -------
+        list[dict[str, str | list[float] | float]]
+            Dictionary with the unique elements in the species, their stoichiometric
+            coefficients in each species, and their total number in the plasma.
+
+            Keys:
+            - name: Element name, as a string.
+            - stoich_coeff: Stoichiometric coefficient of the element in each species, as a list.
+            - N_tot: Total number of the element in the plasma, in :math:`\text{particles.m}^{-3}`.
+
+        Notes
+        -----
+        The stoichiometric coefficient of an element in a species is the number of
+        atoms of that element in the species. For example, in the species N2, the
+        stoichiometric coefficient of N is 2.
+
+        The total number of an element in the plasma is the sum of the stoichiometric
+        coefficients of that element in each species, multiplied by the mole fraction
+        of that species, and multiplied by Avogadro's number.
+
+        See Also
+        --------
+        Mixture.calculate_composition : Calculate the LTE composition of the plasma.
+        """
+        # Get the set of unique elements in the species.
+        # Electrons are discarded.
+        # Example: if species = {N2, O2, NO}, then unique_elements = {N, O}.
+        unique_elements = set(s for sp in self.species for s in sp.stoichiometry)
+        # For each unique element, create a dictionary with the element name,
+        # stoichiometric coefficient in each species, and total number of that
+        # element in the plasma.
+        elements = [
+            {"name": name, "stoich_coeff": None, "N_tot": 0}
+            for name in sorted(unique_elements)
+        ]
+        # Fill in the stoichiometric coefficients.
+        # Example: if species = {N2, O2, NO}, then elements = [{N, [2, 0, 1], 0}, {O, [0, 2, 1], 0}].
+        for element in elements:
+            element["stoich_coeff"] = [
+                sp.stoichiometry.get(element["name"], 0) for sp in self.species
+            ]
+        # Calculate the total number density of each element in the plasma.
+        # Example: if species = {N2, O2, NO}, and x0 = [0.7, 0.2, 0.1], then
+        # elements = [{N, [2, 0, 1], 1.5e24}, {O, [0, 2, 1], 0.5e24}].
+        # TODO: Check if the factor 1e24 is arbitrary.
+        for element in elements:
+            element["N_tot"] = sum(
+                1e24 * c * x0 for c, x0 in zip(element["stoich_coeff"], self.x0)
+            )
+
+        return elements
+
+    def __get_constraints(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        r"""Get the constraints for the Gibbs free energy minimiser.
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray, np.ndarray]
+            Matrices and vectors for the constraints of the minimiser.
+
+        Notes
+        -----
+        The constraints for the Gibbs free energy minimiser are the conservation
+        of the number of atoms of each element in the plasma, and the conservation
+        of charge neutrality. The constraints are defined by the following equations:
+
+        .. math::
+
+            \sum_j c_{ij} N_j = N_{\text{tot}, i}, \quad i = 1, 2, \ldots, n
+
+        where :math:`c_{ij}` is the stoichiometric coefficient of element :math:`i`
+        in species :math:`j`, :math:`N_j` is the number of particles of species :math:`j`,
+        and :math:`N_{\text{tot}, i}` is the total number of atoms of element :math:`i` in the plasma.
+
+        See Also
+        --------
+        Mixture.calculate_composition : Calculate the LTE composition of the plasma.
+        """
+        # Create the Gibbs free energy minimisation matrix and vector.
+        # Example:
+        #   if species = {N2, O2, NO, N2+, e-}, and x0 = [0.7, 0.2, 0.1, 0],
+        #   then nb_species = 5, elements = [{N, [2, 0, 1, 2], 1.5e24}, {O, [0, 2, 1, 0], 0.5e24}],
+        #   and minimiser_dof = 5 + 2 + 1 = 8.
+        #
+        #  gfe_matrix = [     N2  O2  NO  N2+  e-  N  O  charge
+        #           ┌ N2    [  0,  0,  0,  0,  0,  2,  0,  0],
+        #           │ O2    [  0,  0,  0,  0,  0,  0,  2,  0],
+        #   species ┥ NO    [  0,  0,  0,  0,  0,  1,  1,  0],
+        #           │ N2+   [  0,  0,  0,  0,  0,  2,  0,  1],
+        #           └ e-    [  0,  0,  0,  0,  0,  0,  0, -1],
+        #   element ┌  N    [  2,  0,  1,  2,  0,  0,  0,  0],
+        #           └  O    [  0,  2,  1,  0,  0,  0,  0,  0],
+        #   charge          [  0,  0,  0,  1, -1,  0,  0,  0],
+        # ]
+        # gfe_vector = [
+        #           ┌ N2     0,
+        #           │ O2     0,
+        #   species ┥ NO     0,
+        #           │ N2+    0,
+        #           └ e-     0,
+        #   element ┌  N     1.5e24,
+        #           └  O     0.5e24,
+        #   charge           0,
+        # ]
+        A_matrix_constraints = np.zeros((len(self.species), len(self._elements) + 1))
+        A_matrix_constraints_transpose = np.zeros(
+            (len(self._elements) + 1, len(self.species))
+        )
+        b_vector_constraints = np.zeros(len(self._elements) + 1)
+
+        for i, element in enumerate(self._elements):
+            stoichiometric_coefficients = element["stoich_coeff"]
+            assert isinstance(stoichiometric_coefficients, list)
+            for j, sc in enumerate(stoichiometric_coefficients):
+                A_matrix_constraints[j, i] = sc
+                A_matrix_constraints_transpose[i, j] = sc
+            b_vector_constraints[i] = element["N_tot"]
+
+        for j, qc in enumerate(sp.chargenumber for sp in self.species):
+            A_matrix_constraints[j, -1] = qc
+            A_matrix_constraints_transpose[-1, j] = qc
+
+        return (
+            A_matrix_constraints,
+            A_matrix_constraints_transpose,
+            b_vector_constraints,
+        )
+
     def __recalcE0i(self) -> tuple[np.ndarray, np.ndarray]:
         r"""Calculate the reference energy values for all species.
 
         Calculate the reference energy values for all species, including
-        ionisation energy lowering from limitation theory of Stewart &
-        Pyatt 1966 (lowering only applied to positive ions).
+        ionisation energy lowering from limitation theory of [Stewart1966]_
+        Note that lowering only applied to positive ions.
 
         Returns
         -------
@@ -172,8 +322,8 @@ class LTE:
         * For charged species, :math:`E_i^0` is :math:`E_i^0` of the species with one fewer charge number
           plus the lowered ionisation energy of that species.
 
-        The lowered ionisation energy :math:`\Delta E_i` of each species is using the formula
-        of Stewart & Pyatt 1966:
+        The lowered ionisation energy :math:`\Delta E_i` of each species is using the equation 5
+        of [Stewart1966]_ (:math:`J` in the article is the lowered ionisation energy):
 
         .. math::
 
@@ -211,7 +361,8 @@ class LTE:
         number_densities = N_i / V  # Number density of each species, in particles/m3.
 
         # Initialise arrays for reference energy and ionisation energy lowering.
-        E0, dE = np.zeros(nb_species), np.zeros(nb_species)
+        E0 = np.zeros(nb_species)
+        dE = np.zeros(nb_species)
 
         # For (uncharged) polyatomic species, the reference energy is the
         # negative of the dissociation energy.
@@ -222,14 +373,11 @@ class LTE:
         # Calculate the effective charge number z*.
         # The effective charge number is the sum of the square of the charge
         # number of each species multiplied by the number density of that species.
-        weighted_charge_sum_squared, weighted_charge_sum = 0.0, 0.0
-        for sp, nd in zip(self.species, number_densities):
-            if sp.chargenumber > 0:  # Only consider positively charged species.
-                # Electron are discarded, but so are every negatively charged species.
-                # TODO: Check if negative ions should be considered.
-                weighted_charge_sum += nd * sp.chargenumber
-                weighted_charge_sum_squared += nd * sp.chargenumber**2
-        z_star = weighted_charge_sum_squared / weighted_charge_sum
+        charges_numbers = np.array([sp.chargenumber for sp in self.species])
+        z_star = self.calculate_effective_charge_number(
+            charges_numbers,
+            number_densities,
+        )
 
         # Get the electron number density.
         n_e = number_densities[-1]  # m^-3
@@ -240,19 +388,9 @@ class LTE:
         ) ** (3 / 2)
 
         # Calculate the ionisation energy lowering for each (positively) charged species.
-        for i, sp in enumerate(self.species):
-            if sp.chargenumber > 0:
-                # Electron are discarded, but so are every negatively charged species.
-                # TODO: Check if negative ions should be considered.
-
-                # Calculate the ion-sphere radius, to the power 3.
-                ai_pow3 = 3 * sp.chargenumber / (4 * np.pi * n_e)
-                # Calculate the ionisation energy lowering.
-                dE[i] = (
-                    kbt
-                    * ((ai_pow3 / debye_pow3 + 1) ** (2 / 3) - 1)
-                    / (2 * (z_star + 1))
-                )
+        dE = self.calculate_lowering_ionisation_energy(
+            charges_numbers, n_e, kbt, z_star, debye_pow3
+        )
 
         # Get the neutral species.
         neutral_species = [sp for sp in self.species if sp.chargenumber == 0]
@@ -313,10 +451,54 @@ class LTE:
                 negatively_charged_sp[:-1], negatively_charged_sp[1:]
             ):
                 E0[ito] = E0[ifrom] - spto.ionisationenergy + dE[ito]
-                # NOTE: Check if dE is well computed for negatively charged species.
+                # NOTE: For negative ions, dE is equal to zero.
 
         # Return the reference energy and ionisation energy lowering.
         return E0, dE
+
+    @staticmethod
+    @njit
+    def calculate_effective_charge_number(
+        charge_numbers: np.ndarray,
+        number_densities: np.ndarray,
+    ) -> float:
+        # Calculate the effective charge number z*.
+        # The effective charge number is the sum of the square of the charge
+        # number of each species multiplied by the number density of that species.
+        weighted_charge_sum_squared, weighted_charge_sum = 0.0, 0.0
+        for z_i, nd in zip(charge_numbers, number_densities):
+            if z_i > 0:  # Only consider positively charged species.
+                weighted_charge_sum += nd * z_i
+                weighted_charge_sum_squared += nd * z_i**2
+        return weighted_charge_sum_squared / weighted_charge_sum
+
+    @staticmethod
+    @njit
+    def calculate_lowering_ionisation_energy(
+        charge_numbers: np.ndarray,
+        electron_density: float,
+        kbt: float,
+        z_star: float,
+        debye_pow3: float,
+    ) -> np.ndarray:
+        # Initialise arrays for ionisation energy lowering.
+        dE = np.zeros(len(charge_numbers))
+
+        # Calculate the ionisation energy lowering for each (positively) charged species.
+        for i, charge_number in enumerate(charge_numbers):
+            if charge_number > 0:
+                # Electron are discarded, but so are every negatively charged species.
+                # TODO: Check if negative ions should be considered.
+
+                # Calculate the ion-sphere radius, to the power 3.
+                ai_pow3 = 3 * charge_number / (4 * np.pi * electron_density)
+                # Calculate the ionisation energy lowering.
+                dE[i] = (
+                    kbt
+                    * ((ai_pow3 / debye_pow3 + 1) ** (2 / 3) - 1)
+                    / (2 * (z_star + 1))
+                )
+        return dE
 
     def calculate_composition(self) -> np.ndarray:
         r"""Calculate the LTE composition of the plasma in :math:`\text{particles.m}^{-3}`.
@@ -390,32 +572,6 @@ class LTE:
             V = N_tot * kbt / self.P  # Volume of the plasma, in m3.
             return N_i / V  # Number density of each species, in particles/m3.
 
-        # Get the set of unique elements in the species.
-        # Electrons are discarded.
-        # Example: if species = {N2, O2, NO}, then unique_elements = {N, O}.
-        unique_elements = set(s for sp in self.species for s in sp.stoichiometry)
-        # For each unique element, create a dictionary with the element name,
-        # stoichiometric coefficient in each species, and total number of that
-        # element in the plasma.
-        elements = [
-            {"name": name, "stoich_coeff": None, "N_tot": 0}
-            for name in sorted(unique_elements)
-        ]
-        # Fill in the stoichiometric coefficients.
-        # Example: if species = {N2, O2, NO}, then elements = [{N, [2, 0, 1], 0}, {O, [0, 2, 1], 0}].
-        for element in elements:
-            element["stoich_coeff"] = [
-                sp.stoichiometry.get(element["name"], 0) for sp in self.species
-            ]
-        # Calculate the total number density of each element in the plasma.
-        # Example: if species = {N2, O2, NO}, and x0 = [0.7, 0.2, 0.1], then
-        # elements = [{N, [2, 0, 1], 1.5e24}, {O, [0, 2, 1], 0.5e24}].
-        # TODO: Check if the factor 1e24 is arbitrary.
-        for element in elements:
-            element["N_tot"] = sum(
-                1e24 * c * x0 for c, x0 in zip(element["stoich_coeff"], self.x0)
-            )
-
         # Create the Gibbs free energy minimisation matrix and vector.
         # Example:
         #   if species = {N2, O2, NO, N2+, e-}, and x0 = [0.7, 0.2, 0.1, 0],
@@ -442,17 +598,19 @@ class LTE:
         #           └  O     0.5e24,
         #   charge           0,
         # ]
-        minimiser_dof = nb_species + len(elements) + 1  # Number of degrees of freedom.
+        #
+        # self._elements is initialised at the instantiation of the Mixture object,
+        # by using `self.__get_elements()` method.
+        minimiser_dof = nb_species + len(self._elements) + 1
         gfe_matrix = np.zeros((minimiser_dof, minimiser_dof))
         gfe_vector = np.zeros(minimiser_dof)
-        for i, element in enumerate(elements):
-            gfe_vector[nb_species + i] = element["N_tot"]
-            for j, sc in enumerate(element["stoich_coeff"]):
-                gfe_matrix[nb_species + i, j] = sc
-                gfe_matrix[j, nb_species + i] = sc
-        for j, qc in enumerate(sp.chargenumber for sp in self.species):
-            gfe_matrix[-1, j] = qc
-            gfe_matrix[j, -1] = qc
+        # The first nb_species rows and columns are for the species.
+        # The next len(self._elements) rows and columns are for the elements.
+        # The last row and column are for the charge neutrality.
+        # The constraints are defined in `self.__get_constraints()`.
+        gfe_matrix[:nb_species, nb_species:] = self._A_matrix_constraints
+        gfe_matrix[nb_species:, :nb_species] = self._A_matrix_constraints_transpose
+        gfe_vector[nb_species:] = self._b_vector_constraints
 
         # Initialise the number of particles of each species.
         # The estimate is the same for all species, and is given by the user.
@@ -514,6 +672,11 @@ class LTE:
                 # Solve the linear system of equations.
                 # The solution is the estimated number of particles of each species.
                 solution = np.linalg.solve(gfe_matrix, gfe_vector)
+                # The following does not work (numpy.linalg.LinAlgError: Matrix is singular.)
+                # solution = linalg.solve(gfe_matrix, gfe_vector, assume_a="sym", lower=True)
+                # The following does work.
+                # lu, pivot = linalg.lu_factor(gfe_matrix)
+                # solution = linalg.lu_solve((lu, pivot), gfe_vector)
 
                 # New number of particles of each species.
                 new_Ni = solution[0:nb_species]

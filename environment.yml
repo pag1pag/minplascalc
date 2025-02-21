@@ -1,7 +1,7 @@
 # environment.yml: Mandatory dependencies only.
 #
 # Create a new environment from this file with :
-#   conda create -n minplascalc-env python=3.11 -y
+#   conda create -n minplascalc-env python=3.13 -y
 #
 # Or update an existing environment minplascalc-env from this file with :
 #   conda activate minplascalc-env
@@ -20,4 +20,3 @@ dependencies:
 - numpy
 - pandas
 - scipy
-- sympy

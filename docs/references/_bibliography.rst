@@ -36,6 +36,11 @@ Articles
   (Russian original - ZhETF, Vol. 59, No. 4, p. 1225, April 1971)
   Available at: http://www.jetp.ras.ru/cgi-bin/dn/e_032_04_0670.pdf - accessed 2025-02-19
 
+.. [Stewart1966] Stewart, John C. and Pyatt, Jr., Kedar D.;
+  Lowering of Ionization Potentials in Plasmas
+  The Astrophysical Journal, 144, 1203, 1966
+  DOI: 10.1086/148714
+
 
 
 Books
